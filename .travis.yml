@@ -13,3 +13,10 @@ install:
 
 script:
   - npm run build
+  
+deploy:
+  provider: npm
+  email: $EMAIL_ADDRESS
+  api_key: $NPM_TOKEN
+  on:
+    tags: true
