@@ -1,16 +1,22 @@
 ## Multer Azure Blob Storage
-[![npm version](https://badge.fury.io/js/multer-azure-blob-storage.svg)](https://badge.fury.io/js/multer-azure-blob-storage) [![Build Status](https://travis-ci.org/Sliverb/multer-azure-blob-storage.svg?branch=master)](https://travis-ci.org/Sliverb/multer-azure-blob-storage)
+[![npm version](https://badge.fury.io/js/multer-blob-storage.svg)](https://badge.fury.io/js/multer-blob-storage) [![Build Status](https://travis-ci.org/daniyel/multer-blob-storage.svg?branch=master)](https://travis-ci.org/daniyel/multer-blob-storage)
 
 ES6 &amp; Typescript friendly [Multer](https://github.com/expressjs/multer) storage engine for Azure's blob storage.
+
+## Reason for forking
+
+Forked version [multer-azure-blob-storage](https://github.com/symphonicc/multer-azure-blob-storage), was not built correctly. The `options` part, that was passed to the `createWriteStreamToBlockBlob` of `azure-storage` package was omitted during build process and so the files uploaded via multer had wrong content type set, hance why, if you tried to access the file via URL, it was always trying to download the file, because it had `Content-Type` set to `application/octet-stream`.
+
+I am also publishing this as new npm package `multer-blob-storage`, since the last time original package was updated, it was 1 year ago.
 
 ### Installation
 
 ```
-npm i -S multer-azure-blob-storage
+npm i -S multer-blob-storage
 ```
 or
 ```
-yarn add multer-azure-blob-storage
+yarn add multer-blob-storage
 ```
 
 ### Usage
@@ -20,7 +26,7 @@ yarn add multer-azure-blob-storage
 Leverages strong typings
 ``` javascript
 import * as multer from 'multer';
-import { MulterAzureStorage, MASNameResolver } from 'multer-azure-blob-storage';
+import { MulterAzureStorage, MASNameResolver } from 'multer-blob-storage';
 
 const resolveBlobName: MASNameResolver = (req: any, file: Express.Multer.File): Promise<string> => {
     return new Promise<string>((resolve, reject) => {
@@ -63,13 +69,13 @@ app.post('/documents', upload.any(), (req: Request, res: Response, next: NextFun
 Common.js style imports
 ```javascript
 const multer = require('multer')
-const MulterAzureStorage = require('multer-azure-blob-storage').MulterAzureStorage;
+const MulterAzureStorage = require('multer-blob-storage').MulterAzureStorage;
 ```
 
 E6 style imports
 ``` javascript
 import * as multer from 'multer';
-import { MulterAzureStorage } from 'multer-azure-blob-storage';
+import { MulterAzureStorage } from 'multer-blob-storage';
 ```
 
 Rest of the JS code
@@ -158,7 +164,7 @@ The `containerName` can be anything you choose, as long as it's unique to the st
 
 The `blobName` in an Azure container also needs to have a unique name.
 
-`multer-azure-blob-storage` allows you to customize the `containerName` and `blobName` per request before uploading the file. This can be done by proving a `MASNameResolver` function in the configuation object for the desired parameter.
+`multer-blob-storage` allows you to customize the `containerName` and `blobName` per request before uploading the file. This can be done by proving a `MASNameResolver` function in the configuation object for the desired parameter.
 ``` javascript
 const resolveName: MASNameResolver = (req: any, file: Express.Multer.File): Promise<string> => {
     return new Promise<string>((resolve, reject) => {
@@ -169,7 +175,7 @@ const resolveName: MASNameResolver = (req: any, file: Express.Multer.File): Prom
 };
 ```
 
-`multer-azure-blob-storage` also allows you to add/customize `metadata` per request before uploading the file. This can be done by proving a `MASObjectResolver` function in the configuation object for the desired parameter.
+`multer-blob-storage` also allows you to add/customize `metadata` per request before uploading the file. This can be done by proving a `MASObjectResolver` function in the configuation object for the desired parameter.
 ``` javascript
 export type MetadataObj = { [k: string]: string };
 const resolveMetadata: MASObjectResolver = (req: any, file: Express.Multer.File): Promise<MetadataObj> => {
