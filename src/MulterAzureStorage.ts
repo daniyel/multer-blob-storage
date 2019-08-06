@@ -112,7 +112,7 @@ export class MulterAzureStorage implements StorageEngine {
                 break;
 
             default:
-                // Catch for if container name is provided but not a desired type    
+                // Catch for if container name is provided but not a desired type
                 this._containerName = this._promisifyStaticValue(this.DEFAULT_UPLOAD_CONTAINER);
                 break;
         }
@@ -132,7 +132,7 @@ export class MulterAzureStorage implements StorageEngine {
             case BlobUtilities.BlobContainerPublicAccessType.BLOB:
                 this._containerAccessLevel = BlobUtilities.BlobContainerPublicAccessType.BLOB;
                 break;
-                
+
             default:
                 // Fallback to the default container level
                 this._containerAccessLevel = this.DEFAULT_CONTAINER_ACCESS_LEVEL;
@@ -182,18 +182,21 @@ export class MulterAzureStorage implements StorageEngine {
             // Resolve blob name and container name
             const blobName: string = await this._blobName(req, file);
             const containerName: string = await this._containerName(req, file);
+            const options: BlobService.CreateBlockBlobRequestOptions = {
+                contentSettings: {
+                    contentType: file.mimetype,
+                    contentDisposition: 'inline'
+                }
+            };
             // Create container if it doesnt exist
             await this._createContainerIfNotExists(containerName, this._containerAccessLevel);
             // Prep stream
             let blobStream: Writable;
             if (this._metadata == null) {
-                blobStream = this._blobService.createWriteStreamToBlockBlob(containerName, blobName,
-                    {
-                        contentSettings: {
-                            contentType: file.mimetype,
-                            contentDisposition: 'inline'
-                        }
-                    }, 
+                blobStream = this._blobService.createWriteStreamToBlockBlob(
+                    containerName,
+                    blobName,
+                    options,
                     (cWSTBBError, result, response) => {
                     if (cWSTBBError) {
                         cb(cWSTBBError);
@@ -206,13 +209,7 @@ export class MulterAzureStorage implements StorageEngine {
                 blobStream = this._blobService.createWriteStreamToBlockBlob(
                     containerName,
                     blobName,
-                    {
-                        contentSettings: {
-                            contentType: file.mimetype,
-                            contentDisposition: 'inline'
-                        },
-                        metadata: metadata,
-                    },
+                    Object.assign(options, { metadata }),
                     (cWSTBBError, result, response) => {
                         if (cWSTBBError) {
                             cb(cWSTBBError);
