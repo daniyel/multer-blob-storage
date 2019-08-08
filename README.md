@@ -43,6 +43,13 @@ const resolveMetadata: MASObjectResolver = (req: any, file: Express.Multer.File)
     });
 };
 
+const resolveContentSettings: MASObjectResolver = (req: any, file: Express.Multer.File): Promise<MetadataObj> => {
+    return new Promise<MetadataObj>((resolve, reject) => {
+        const contentSettings: MetadataObj = yourCustomLogic(req, file);
+        resolve(contentSettings);
+    });
+};
+
 const azureStorage: MulterAzureStorage = new MulterAzureStorage({
     connectionString: 'DefaultEndpointsProtocol=https;AccountName=mystorageaccountname;AccountKey=wJalrXUtnFEMI/K7MDENG/bPxRfiCYzEXAMPLEKEY;EndpointSuffix=core.windows.net',
     accessKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYzEXAMPLEKEY',
@@ -50,6 +57,7 @@ const azureStorage: MulterAzureStorage = new MulterAzureStorage({
     containerName: 'documents',
     blobName: resolveBlobName,
     metadata: resolveMetadata,
+    contentSettings: resolveContentSettings,
     containerAccessLevel: 'blob',
     urlExpirationTime: 60
 });
@@ -94,6 +102,13 @@ const resolveMetadata = (req, file) => {
     });
 };
 
+const resolveContentSettings = (req, file) => {
+    return new Promise((resolve, reject)) => {
+        const contentSettings = yourCustomLogic(req, file);
+        resolve(contentSettings);
+    };
+};
+
 const azureStorage = new MulterAzureStorage({
     connectionString: 'DefaultEndpointsProtocol=https;AccountName=mystorageaccountname;AccountKey=wJalrXUtnFEMI/K7MDENG/bPxRfiCYzEXAMPLEKEY;EndpointSuffix=core.windows.net',
     accessKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYzEXAMPLEKEY',
@@ -101,6 +116,7 @@ const azureStorage = new MulterAzureStorage({
     containerName: 'documents',
     blobName: resolveBlobName,
     metadata: resolveMetadata,
+    contentSettings: resolveContentSettings,
     containerAccessLevel: 'blob',
     urlExpirationTime: 60
 });
@@ -175,7 +191,7 @@ const resolveName: MASNameResolver = (req: any, file: Express.Multer.File): Prom
 };
 ```
 
-`multer-blob-storage` also allows you to add/customize `metadata` per request before uploading the file. This can be done by proving a `MASObjectResolver` function in the configuation object for the desired parameter.
+`multer-blob-storage` also allows you to add/customize `metadata` and `contentSettings` per request before uploading the file. This can be done by proving a `MASObjectResolver` function in the configuation object for the desired parameter.
 ``` javascript
 export type MetadataObj = { [k: string]: string };
 const resolveMetadata: MASObjectResolver = (req: any, file: Express.Multer.File): Promise<MetadataObj> => {

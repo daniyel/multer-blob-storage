@@ -27,6 +27,7 @@ export interface IMASOptions {
     blobName?: MASNameResolver;
     containerName: MASNameResolver | string;
     metadata?: MASObjectResolver | MetadataObj;
+    contentSettings?: MASObjectResolver | MetadataObj;
     containerAccessLevel?: string;
 }
 
@@ -67,6 +68,7 @@ export class MulterAzureStorage implements StorageEngine {
     private _blobName: MASNameResolver;
     private _urlExpirationTime: number;
     private _metadata: MASObjectResolver;
+    private _contentSettings: MASObjectResolver;
     private _containerName: MASNameResolver;
     private _containerAccessLevel: string;
 
@@ -158,6 +160,25 @@ export class MulterAzureStorage implements StorageEngine {
                     break;
             }
         }
+        // Check for contentSettings
+        if (!options.contentSettings) {
+            this._contentSettings = null;
+        } else {
+            switch (typeof options.contentSettings) {
+                case "object":
+                    this._contentSettings = this._promisifyStaticObj(<MetadataObj>options.contentSettings);
+                    break;
+
+                case "function":
+                    this._contentSettings = <MASObjectResolver>options.contentSettings;
+                    break;
+
+                default:
+                    // Nullify all other types
+                    this._contentSettings = null;
+                    break;
+            }
+        }
         // Set proper blob name
         this._blobName = options.blobName ? options.blobName : this._generateBlobName;
         // Set url expiration time
@@ -183,10 +204,10 @@ export class MulterAzureStorage implements StorageEngine {
             const blobName: string = await this._blobName(req, file);
             const containerName: string = await this._containerName(req, file);
             const options: BlobService.CreateBlockBlobRequestOptions = {
-                contentSettings: {
+                contentSettings: this._contentSettings == null ? {
                     contentType: file.mimetype,
                     contentDisposition: 'inline'
-                }
+                } : await this._contentSettings(req, file)
             };
             // Create container if it doesnt exist
             await this._createContainerIfNotExists(containerName, this._containerAccessLevel);
