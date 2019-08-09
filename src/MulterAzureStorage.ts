@@ -204,7 +204,7 @@ export class MulterAzureStorage implements StorageEngine {
             const blobName: string = await this._blobName(req, file);
             const containerName: string = await this._containerName(req, file);
             const options: BlobService.CreateBlockBlobRequestOptions = {
-                contentSettings: this._contentSettings == null ? {
+                contentSettings: this._contentSettings === null ? {
                     contentType: file.mimetype,
                     contentDisposition: 'inline'
                 } : await this._contentSettings(req, file)
@@ -213,7 +213,7 @@ export class MulterAzureStorage implements StorageEngine {
             await this._createContainerIfNotExists(containerName, this._containerAccessLevel);
             // Prep stream
             let blobStream: Writable;
-            if (this._metadata == null) {
+            if (this._metadata === null) {
                 blobStream = this._blobService.createWriteStreamToBlockBlob(
                     containerName,
                     blobName,
