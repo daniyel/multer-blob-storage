@@ -1,5 +1,5 @@
 ## Multer Azure Blob Storage
-[![npm version](https://badge.fury.io/js/multer-blob-storage.svg)](https://badge.fury.io/js/multer-blob-storage) [![publish](https://github.com/danijel/multer-blob-storage/actions/workflows/publish.yml/badge.svg)](https://app.travis-ci.com/github/daniyel/multer-blob-storage)
+[![npm version](https://badge.fury.io/js/multer-blob-storage.svg)](https://badge.fury.io/js/multer-blob-storage) ![publish](https://github.com/danijel/multer-blob-storage/actions/workflows/publish/badge.svg)
 
 ES6 &amp; Typescript friendly [Multer](https://github.com/expressjs/multer) storage engine for Azure's blob storage.
 
