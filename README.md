@@ -1,5 +1,5 @@
 ## Multer Azure Blob Storage
-[![npm version](https://badge.fury.io/js/multer-blob-storage.svg)](https://badge.fury.io/js/multer-blob-storage) [![Build Status](https://travis-ci.org/daniyel/multer-blob-storage.svg?branch=master)](https://travis-ci.org/daniyel/multer-blob-storage)
+[![npm version](https://badge.fury.io/js/multer-blob-storage.svg)](https://badge.fury.io/js/multer-blob-storage) ![publish](https://github.com/danijel/multer-blob-storage/actions/workflows/publish/badge.svg)
 
 ES6 &amp; Typescript friendly [Multer](https://github.com/expressjs/multer) storage engine for Azure's blob storage.
 
@@ -143,13 +143,13 @@ Key | Description | Note
 `originalname` | Full original name of the file on the user's computer. | Added by Multer
 `encoding` | File encoding type. | Added by Multer
 `mimetype` | MIME type of the file. | Added by Multer
-`blobName` | Blob/file name of created blob in Azure storage. | 
-`container` | Name of azure storage container where the blob/file was uploaded to. | 
+`blobName` | Blob/file name of created blob in Azure storage. |
+`container` | Name of azure storage container where the blob/file was uploaded to. |
 `blobType` | Type of blob. | From the result of call to azure's `getBlobProperties()` of `blobService`
 `size` | Size of the blob. | From the result of call to azure's `getBlobProperties()` of `blobService`
 `etag` | Etag. | From the result of call to azure's `getBlobProperties()` of `blobService`
 `metadata` | Blob's metadata. | From the result of call to azure's `getBlobProperties()` of `blobService`
-`url` | The full url to access the uploaded blob/file. | 
+`url` | The full url to access the uploaded blob/file. |
 
 ### Configuration object
 Details of the configuration object that needs to be passed into the constructor of the MulterAzureStorage class.
@@ -171,7 +171,7 @@ For more information about the meaning of individual parameters please check [Az
 
 For the optional parameters in the configuration object for the MulterAzureStorage class, here are the default fallbacks:
 - `containerAccessLevel`: blob
-- `urlExpirationTime`: 60 minutes
+- `urlExpirationTime`: 60 minutes. NOTE: To unset this property and not revert to the default, pass in `-1`
 - `blobName`: Date.now() + '-' + uuid.v4() + path.extname(file.originalname). This results in a url safe filename that looks like `'1511161727560-d83d24c8-d213-444c-ba72-316c7a858805.png'`
 
 ### File naming

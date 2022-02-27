@@ -10,7 +10,7 @@ import { v4 } from "uuid";
 import { extname } from "path";
 import { Request } from "express";
 import { StorageEngine } from "multer";
-import { Stream, Writable } from "stream";
+import { Writable } from "stream";
 import { BlobService, date, BlobUtilities } from "azure-storage";
 
 // Custom types
@@ -29,10 +29,6 @@ export interface IMASOptions {
     metadata?: MASObjectResolver | MetadataObj;
     contentSettings?: MASObjectResolver | MetadataObj;
     containerAccessLevel?: string;
-}
-
-export interface MulterInFile extends Express.Multer.File {
-    stream: Stream;
 }
 
 export interface MulterOutFile extends Express.Multer.File {
@@ -59,14 +55,14 @@ export class MASError implements Error {
 }
 
 export class MulterAzureStorage implements StorageEngine {
-    private readonly DEFAULT_URL_EXPIRATION_TIME: number = 60;
+    private readonly DEFAULT_URL_EXPIRATION_TIME: number = 60; // Minutes
     private readonly DEFAULT_UPLOAD_CONTAINER: string = "default-container";
     private readonly DEFAULT_CONTAINER_ACCESS_LEVEL: string = /* aka private */ BlobUtilities.BlobContainerPublicAccessType.OFF;
 
     private _error: MASError;
     private _blobService: BlobService;
     private _blobName: MASNameResolver;
-    private _urlExpirationTime: number;
+    private _urlExpirationTime: number | null;
     private _metadata: MASObjectResolver;
     private _contentSettings: MASObjectResolver;
     private _containerName: MASNameResolver;
@@ -160,7 +156,7 @@ export class MulterAzureStorage implements StorageEngine {
                     break;
             }
         }
-        // Check for contentSettings
+        // Check for user defined properties
         if (!options.contentSettings) {
             this._contentSettings = null;
         } else {
@@ -182,16 +178,18 @@ export class MulterAzureStorage implements StorageEngine {
         // Set proper blob name
         this._blobName = options.blobName ? options.blobName : this._generateBlobName;
         // Set url expiration time
-        this._urlExpirationTime = (options.urlExpirationTime && (typeof options.urlExpirationTime === "number") && (options.urlExpirationTime > 0)) ?
-            +options.urlExpirationTime :
-            this.DEFAULT_URL_EXPIRATION_TIME;
+        this._urlExpirationTime = (options?.urlExpirationTime === -1)
+            ? null
+            : (options.urlExpirationTime && (typeof options.urlExpirationTime === "number") && (options.urlExpirationTime > 0))
+                ? +options.urlExpirationTime
+                : this.DEFAULT_URL_EXPIRATION_TIME;
         // Init blob service
         this._blobService = options.connectionString ?
             new BlobService(options.connectionString) :
             new BlobService(options.accountName, options.accessKey);
     }
 
-    async _handleFile(req: Request, file: MulterInFile, cb: (error?: any, info?: Partial<MulterOutFile>) => void) {
+    async _handleFile(req: Request, file: Express.Multer.File, cb: (error?: any, info?: Partial<MulterOutFile>) => void) {
         // Ensure we have no errors during setup
         if (this._error.errorList.length > 0) {
             cb(this._error);
@@ -213,25 +211,37 @@ export class MulterAzureStorage implements StorageEngine {
             await this._createContainerIfNotExists(containerName, this._containerAccessLevel);
             // Prep stream
             let blobStream: Writable;
-            if (this._metadata === null) {
-                blobStream = this._blobService.createWriteStreamToBlockBlob(
-                    containerName,
-                    blobName,
-                    options,
-                    (cWSTBBError, result, response) => {
-                    if (cWSTBBError) {
-                        cb(cWSTBBError);
-                    } else {
-                        // All good. Continue...
-                    }
-                });
+            let contentSettings: MetadataObj;
+            if (this._contentSettings == null) {
+                contentSettings = {
+                    contentType: file.mimetype,
+                    contentDisposition: 'inline'
+                };
+            } else {
+                contentSettings = <MetadataObj>await this._contentSettings(req, file);
+            }
+            if (this._metadata == null) {
+                blobStream = this._blobService.createWriteStreamToBlockBlob(containerName, blobName,
+                    {
+                        contentSettings
+                    },
+                    (cWSTBBError, _result, _response) => {
+                        if (cWSTBBError) {
+                            cb(cWSTBBError);
+                        } else {
+                            // All good. Continue...
+                        }
+                    });
             } else {
                 const metadata: MetadataObj = <MetadataObj>await this._metadata(req, file);
                 blobStream = this._blobService.createWriteStreamToBlockBlob(
                     containerName,
                     blobName,
-                    Object.assign(options, { metadata }),
-                    (cWSTBBError, result, response) => {
+                    {
+                        contentSettings,
+                        metadata,
+                    },
+                    (cWSTBBError, _result, _response) => {
                         if (cWSTBBError) {
                             cb(cWSTBBError);
                         } else {
@@ -295,7 +305,7 @@ export class MulterAzureStorage implements StorageEngine {
         return new Promise<BlobService.ContainerResult>((resolve, reject) => {
             this._blobService.doesContainerExist(
                 containerName,
-                (error, result, response) => {
+                (error, result, _response) => {
                     if (error) {
                         reject(error);
                     } else {
@@ -312,7 +322,7 @@ export class MulterAzureStorage implements StorageEngine {
                 this._blobService.createContainerIfNotExists(
                     name,
                     { publicAccessLevel: accessLevel },
-                    (error, result, response) => {
+                    (error, _result, _response) => {
                         if (error) {
                             reject(error);
                         } else {
@@ -322,7 +332,7 @@ export class MulterAzureStorage implements StorageEngine {
             } else {
                 this._blobService.createContainerIfNotExists(
                     name,
-                    (error, result, response) => {
+                    (error, _result, _response) => {
                         if (error) {
                             reject(error);
                         } else {
@@ -337,20 +347,20 @@ export class MulterAzureStorage implements StorageEngine {
     private _getSasToken(
         containerName: string,
         blobName: string,
-        expiration: number
+        expiration: number | null
     ): string {
         return this._blobService.generateSharedAccessSignature(
             containerName,
             blobName,
             {
                 AccessPolicy: {
-                    Expiry: date.minutesFromNow(expiration),
+                    Expiry: (expiration == null) ? undefined : date.minutesFromNow(expiration),
                     Permissions: BlobUtilities.SharedAccessPermissions.READ
                 }
             });
     }
 
-    private _getUrl(containerName: string, blobName: string, expiration: number = this._urlExpirationTime): string {
+    private _getUrl(containerName: string, blobName: string, expiration: number | null = this._urlExpirationTime): string {
         const sasToken = this._getSasToken(containerName, blobName, expiration);
         return this._blobService.getUrl(containerName, blobName, sasToken);
     }
@@ -360,7 +370,7 @@ export class MulterAzureStorage implements StorageEngine {
             this._blobService.getBlobProperties(
                 containerName,
                 blobName,
-                (error, result, response) => {
+                (error, result, _response) => {
                     if (error) {
                         reject(error);
                     } else {
@@ -375,7 +385,7 @@ export class MulterAzureStorage implements StorageEngine {
             this._blobService.deleteBlobIfExists(
                 containerName,
                 blobName,
-                (error, result, response) => {
+                (error, _result, _response) => {
                     if (error) {
                         reject(error);
                     } else {
@@ -385,25 +395,27 @@ export class MulterAzureStorage implements StorageEngine {
         });
     }
 
-    private _generateBlobName(req: Request, file: Express.Multer.File): Promise<string> {
-        return new Promise<string>((resolve, reject) => {
+    private _generateBlobName(_req: Request, file: Express.Multer.File): Promise<string> {
+        return new Promise<string>((resolve, _reject) => {
             resolve(`${Date.now()}-${v4()}${extname(file.originalname)}`);
         });
     }
 
     private _promisifyStaticValue(value: string): MASNameResolver {
-        return (req: Request, file: Express.Multer.File): Promise<string> => {
-            return new Promise<string>((resolve, reject) => {
+        return (_req: Request, _file: Express.Multer.File): Promise<string> => {
+            return new Promise<string>((resolve, _reject) => {
                 resolve(value);
             });
         };
     }
 
     private _promisifyStaticObj<T>(value: T): MASObjectResolver {
-        return (req: Request, file: Express.Multer.File): Promise<T> => {
-            return new Promise<T>((resolve, reject) => {
+        return (_req: Request, _file: Express.Multer.File): Promise<T> => {
+            return new Promise<T>((resolve, _reject) => {
                 resolve(value);
             });
         };
     }
 }
+
+export default MulterAzureStorage;
