@@ -201,12 +201,7 @@ export class MulterAzureStorage implements StorageEngine {
             // Resolve blob name and container name
             const blobName: string = await this._blobName(req, file);
             const containerName: string = await this._containerName(req, file);
-            const options: BlobService.CreateBlockBlobRequestOptions = {
-                contentSettings: this._contentSettings === null ? {
-                    contentType: file.mimetype,
-                    contentDisposition: 'inline'
-                } : await this._contentSettings(req, file)
-            };
+
             // Create container if it doesnt exist
             await this._createContainerIfNotExists(containerName, this._containerAccessLevel);
             // Prep stream
