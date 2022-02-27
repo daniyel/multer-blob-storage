@@ -1,5 +1,5 @@
 {
-  "name": "multer-azure-blob-storage",
+  "name": "multer-blob-storage",
   "version": "1.1.0",
   "description": "ES5/6 & Typescript friendly multer storage engine for Azure's blob storage.",
   "main": "lib/index.js",
@@ -12,10 +12,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Sliverb/multer-azure-blob-storage.git"
+    "url": "https://github.com/danijelh/multer-blob-storage.git"
   },
   "bugs": {
-    "url": "https://github.com/Sliverb/multer-azure-blob-storage/issues"
+    "url": "https://github.com/danijelh/multer-blob-storage/issues"
   },
   "keywords": [
     "multer",
