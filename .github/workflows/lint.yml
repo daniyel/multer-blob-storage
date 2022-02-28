@@ -7,8 +7,7 @@ on:
     branches: [ feature/*, feat/* ]
 
 jobs:
-  build:
-
+  lint:
     runs-on: ubuntu-latest
 
     strategy:
@@ -22,4 +21,4 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm install
-    - run: npm lint
+    - run: npm run lint
