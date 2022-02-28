@@ -12,10 +12,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/danijelh/multer-blob-storage.git"
+    "url": "https://github.com/daniyel/multer-blob-storage.git"
   },
   "bugs": {
-    "url": "https://github.com/danijelh/multer-blob-storage/issues"
+    "url": "https://github.com/daniyel/multer-blob-storage/issues"
   },
   "keywords": [
     "multer",
